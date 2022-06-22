@@ -1,4 +1,4 @@
-from Models import MLP, LSTM
+from Models import MLP, LSTM, CustomSVR
 from dataloader import get_set_and_loader
 
 import pandas as pd
@@ -23,3 +23,8 @@ def get_model(model):
         return MLP.MLP
     if model == 'LSTM':
         return LSTM.LSTM
+
+    if model == 'SVR':
+        return CustomSVR.CustomSVR
+
+    return None
