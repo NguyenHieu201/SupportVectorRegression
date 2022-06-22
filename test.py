@@ -9,7 +9,7 @@ import pickle
 
 from utils import *
 from params import * 
-from Model.MultiSrcTL.svr_function import *
+from Models.MultiSrcTL.svr_function import *
 from sklearn.linear_model import LinearRegression
 
 parser = argparse.ArgumentParser()
