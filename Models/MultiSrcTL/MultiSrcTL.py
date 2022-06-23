@@ -3,6 +3,7 @@ import numpy as np
 from scipy import sparse
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.metrics import r2_score
+from sklearn.linear_model import LinearRegression
 import os
 import pickle
 
@@ -110,7 +111,17 @@ class CustomMultiSrcTL():
             predict_list.append(predict_source_i)
         return predict_list
 
-    def predict(self, test_data, confidence=0.5):
+    def fit(self, X, y):
+        self.preProcess()
+        self.compute_inter_src_relation_matrix()
+        self.compute_source_target_relation()
+        self.compute_source_weight()
+        train_pred = self.first_predict(X).ravel().reshape(-1, 1)
+        self.final_scaler = LinearRegression()
+        self.final_scaler.fit(train_pred, y.ravel())
+
+
+    def first_predict(self, test_data, confidence=0.5):
         predict_test_data = []
         n_test = test_data.shape[0]
         predict_values = self.source_domain_predict(data=test_data)
@@ -130,5 +141,10 @@ class CustomMultiSrcTL():
             
             result = np.sum(self.source_weight * domain_learn)
             predict_test_data.append(result)
+        
+        first_pred = np.array(predict_test_data).ravel()
+        return first_pred
 
-        return np.array(predict_test_data).ravel()
+    def predict(self, test_data, confidence=0.5):
+        pred = self.final_scaler.predict(self.first_predict(test_data, confidence).reshape(-1, 1)).reshape(-1, 1)
+        return pred

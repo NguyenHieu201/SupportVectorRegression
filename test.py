@@ -9,8 +9,7 @@ import pickle
 
 from utils import *
 from params import * 
-from Models.MultiSrcTL.svr_function import *
-from sklearn.linear_model import LinearRegression
+from Models.MultiSrcTL.MultiSrcTL import CustomMultiSrcTL, weight_data_mmd
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=1000)
@@ -83,18 +82,9 @@ def mlti_tl_transfer_phase(tar_path, src_data, src_mmd, train_data, train_label,
     custom_mlti = CustomMultiSrcTL(src_path=tar_path,
                                     src_data=src_data,
                                     src_mmd=src_mmd)
-    custom_mlti.preProcess()
-    custom_mlti.compute_inter_src_relation_matrix()
-    custom_mlti.compute_source_target_relation()
-    custom_mlti.compute_source_weight()
+    custom_mlti.fit(train_data, train_label)
 
-    train_pred = custom_mlti.predict(train_data).ravel().reshape(-1, 1)
-    final_scaler = LinearRegression()
-    final_scaler.fit(train_pred, train_label.ravel())
-
-
-    pred = y_scaler_target.inverse_transform(final_scaler.predict(custom_mlti.predict(test_data).reshape(-1, 1))
-                                            .reshape(-1, 1))
+    pred = y_scaler_target.inverse_transform(custom_mlti.predict(test_data))
     true = y_scaler_target.inverse_transform(test_label.reshape(-1, 1))
     plt.plot(true, label='Ground truth')
     plt.plot(pred, label='Prediction')
@@ -102,7 +92,7 @@ def mlti_tl_transfer_phase(tar_path, src_data, src_mmd, train_data, train_label,
     plt.savefig(fig_path, bbox_inches='tight')
     plt.clf()
 
-    return pred, true
+    return pred, true, custom_mlti
 
 
 def run():
@@ -143,11 +133,15 @@ def run():
 
         # Transfer phase
         y_scaler_target = tar_test[0].scaler
-        pred, true = mlti_tl_transfer_phase(tar_path, 
+        pred, true, custom_mlti = mlti_tl_transfer_phase(tar_path, 
                                             src_data, src_mmd, 
                                             train_data, train_label, 
                                             test_data, test_label, 
                                             y_scaler_target, fig_path)
+        
+        # Saved model
+        with open(f'./Saved models/{filename}/{student}', 'wb') as model_file:
+            pickle.dump(custom_mlti, model_file)
 
         # Save metric result
         metrics = params['metrics']
