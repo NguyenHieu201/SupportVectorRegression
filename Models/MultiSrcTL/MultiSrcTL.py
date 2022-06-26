@@ -91,13 +91,13 @@ class CustomMultiSrcTL():
                     relation_matrix[i, j] = error_matrix[i, j] / (np.sum(error_matrix[i, :]) - 1)
         self.source_matrix = relation_matrix
 
-    def compute_source_target_relation(self, SIGMA=0.001, p=1):
+    def compute_source_target_relation(self):
         st_sim = np.zeros(shape=(self.n_domain, ))
         for i in range(self.n_domain):
             name = self.src_name[i]
             st_sim[i, ] = self.src_mmd[name]
 
-        st_sim = np.exp(np.power(st_sim, p) * SIGMA * -1)
+        st_sim = np.exp(np.power(st_sim, self.p) * self.SIGMA * -1)
         st_sum = np.sum(st_sim)
         st_sim = st_sim / (st_sum + 1e-6)
         self.st_sim = st_sim
