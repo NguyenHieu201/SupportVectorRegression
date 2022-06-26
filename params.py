@@ -13,7 +13,13 @@ params = {
     
     'hyperparameters': {
         'l': 22,
-        'p': 1
+        'p': 1,
+        'BETA': 0.1,
+        'SIGMA': 0.001, 
+        'p_level': 1, 
+        'conf_base': 0.06, 
+        'confidence': 0.5
+
     },
     'optimizer': torch.optim.SGD,
     'lr': 0.001,

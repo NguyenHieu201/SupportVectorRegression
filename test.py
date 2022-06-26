@@ -83,7 +83,12 @@ def mlti_tl_transfer_phase(tar_path, src_data, src_mmd, train_data, train_label,
     # Transfer phase
     custom_mlti = CustomMultiSrcTL(src_path=tar_path,
                                     src_data=src_data,
-                                    src_mmd=src_mmd)
+                                    src_mmd=src_mmd,
+                                    BETA=params['hyperparameters']['BETA'],
+                                    SIGMA=params['hyperparameters']['SIGMA'], 
+                                    p=params['hyperparameters']['p_level'], 
+                                    conf_base=params['hyperparameters']['conf_base'], 
+                                    confidence=params['hyperparameters']['confidence'])
     custom_mlti.fit(train_data, train_label)
 
 
