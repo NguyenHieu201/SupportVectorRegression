@@ -29,6 +29,7 @@ test_pct = args.test_pct
 shuffle = args.shuffle
 model = args.model
 mode = args.mode
+shuffle = False
 
 def indicator(metrics_dict, x, y):
     result = {}
@@ -55,6 +56,7 @@ def build_path(path):
 
 filename = f'model_{model}_epochs_{epochs}_batch_{batch_size if batch_size > 0 else "FULL"}_val_{val_pct}_test_{test_pct}_shuffle_{shuffle}'
 build_path(filename)
+        
 
 def train_model(net, src_train_set, tar_train_set):
     # Get dataset and dataloader for source training and target training
@@ -84,6 +86,7 @@ def mlti_tl_transfer_phase(tar_path, src_data, src_mmd, train_data, train_label,
                                     src_mmd=src_mmd)
     custom_mlti.fit(train_data, train_label)
 
+
     pred = y_scaler_target.inverse_transform(custom_mlti.predict(test_data))
     true = y_scaler_target.inverse_transform(test_label.reshape(-1, 1))
     plt.plot(true, label='Ground truth')
@@ -92,7 +95,7 @@ def mlti_tl_transfer_phase(tar_path, src_data, src_mmd, train_data, train_label,
     plt.savefig(fig_path, bbox_inches='tight')
     plt.clf()
 
-    return pred, true, custom_mlti
+    return pred, true
 
 
 def run():
@@ -133,15 +136,11 @@ def run():
 
         # Transfer phase
         y_scaler_target = tar_test[0].scaler
-        pred, true, custom_mlti = mlti_tl_transfer_phase(tar_path, 
+        pred, true = mlti_tl_transfer_phase(tar_path, 
                                             src_data, src_mmd, 
                                             train_data, train_label, 
                                             test_data, test_label, 
                                             y_scaler_target, fig_path)
-        
-        # Saved model
-        with open(f'./Saved models/{filename}/{student}', 'wb') as model_file:
-            pickle.dump(custom_mlti, model_file)
 
         # Save metric result
         metrics = params['metrics']
@@ -155,4 +154,4 @@ def run():
     result_table.to_csv(f'./Results/{filename}/result.csv')
         
         
-run()          
+run()

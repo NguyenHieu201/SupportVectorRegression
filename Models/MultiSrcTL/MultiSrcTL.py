@@ -37,13 +37,18 @@ def weight_data_mmd(source_data, target_data, gamma=100):
     return res, mmd
 
 class CustomMultiSrcTL():
-    def __init__(self, src_path, src_data, src_mmd, BETA=0.1):
+    def __init__(self, src_path, src_data, src_mmd, BETA=0.1, SIGMA=0.001, p=1, conf_base=0.06, confidence=0.5):
         self.src_path = src_path
         self.src_data = src_data
         self.src_mmd = src_mmd
         self.n_domain = len(src_data)
 
         self.BETA = BETA
+        self.SIGMA = SIGMA
+        self.p = p
+        self.conf_base = conf_base
+        self.confidence = confidence
+
 
     def preProcess(self):
         self.src_model = {}
@@ -97,9 +102,9 @@ class CustomMultiSrcTL():
         st_sim = st_sim / (st_sum + 1e-6)
         self.st_sim = st_sim
 
-    def compute_source_weight(self, SIGMA=0.7):
-        # SIGMA = 1 / self.n_domain
-        result = SIGMA * np.identity(self.n_domain) + (1 - SIGMA) * self.source_matrix
+    def compute_source_weight(self):
+        # self.SIGMA = 1 / self.n_domain
+        result = self.SIGMA * np.identity(self.n_domain) + (1 - self.SIGMA) * self.source_matrix
         result = np.matmul(self.st_sim.T, result)
         self.source_weight = result
 
@@ -121,7 +126,7 @@ class CustomMultiSrcTL():
         self.final_scaler.fit(train_pred, y.ravel())
 
 
-    def first_predict(self, test_data, confidence=0.5):
+    def first_predict(self, test_data):
         predict_test_data = []
         n_test = test_data.shape[0]
         predict_values = self.source_domain_predict(data=test_data)
@@ -131,9 +136,13 @@ class CustomMultiSrcTL():
             for t in range(self.n_domain):
                 predict_value[t] = predict_values[t][i]
             for k in range(self.n_domain):
-                # use confidence interval instead
-                conf = 0.8
-                if conf < confidence:
+                # use self.confidence interval instead
+                name = self.src_name[k]
+                model = self.src_model[name]
+                conf = model.distance_boundary(predict_value[k])
+                conf = self.conf_base / (self.conf_base + conf)
+                # print(conf)
+                if conf < self.confidence:
                     domain_learn[k] = (np.matmul(self.source_matrix[k, :].T, predict_value)
                                       - self.source_matrix[k, k] * predict_value[k])
                 else:
@@ -145,6 +154,6 @@ class CustomMultiSrcTL():
         first_pred = np.array(predict_test_data).ravel()
         return first_pred
 
-    def predict(self, test_data, confidence=0.5):
-        pred = self.final_scaler.predict(self.first_predict(test_data, confidence).reshape(-1, 1)).reshape(-1, 1)
+    def predict(self, test_data):
+        pred = self.final_scaler.predict(self.first_predict(test_data).reshape(-1, 1)).reshape(-1, 1)
         return pred
